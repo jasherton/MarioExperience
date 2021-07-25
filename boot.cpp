@@ -32,7 +32,7 @@ static std::wstring ToolTip = L"Mario";
 HMENU TrayMenu;
 
 HANDLE AppMutex;
-static std::string AppID = "v4.0";
+static std::string AppID = "v5.0";
 static std::string BaseURL = "http://marioexperience.us.to/";
 static std::string GitLatestURL = "https://api.github.com/repos/jasherton/MarioExperience/releases/latest";
 
@@ -49,6 +49,7 @@ static std::wstring DisableTextJP = L"止める";
 
 std::vector<std::wstring> NotifVector;
 std::vector<std::wstring> NotifVectorJP;
+std::vector<int> NotifSoundVec;
 
 void SaveData() {
 	std::ofstream setOut;
@@ -199,11 +200,13 @@ void MarioCycle() {
 					else {
 						NotifText = (JPMode) ? NotifVectorJP[0] : NotifVector[0];
 					}
+					PlaySound(MAKEINTRESOURCE(*select_randomly(NotifSoundVec.begin(), NotifSoundVec.end())), NULL, SND_RESOURCE | SND_ASYNC);
 				}
 				else {
 					switch (IgnoreSwitch) {
 					default:
 						NotifText = (JPMode) ? NotifVectorJP[0] : NotifVector[0];
+						PlaySound(MAKEINTRESOURCE(*select_randomly(NotifSoundVec.begin(), NotifSoundVec.end())), NULL, SND_RESOURCE | SND_ASYNC);
 						break;
 					case 3:
 						NotifText = (JPMode) ? NotifVectorJP[1] : NotifVector[1];
@@ -465,6 +468,12 @@ int _stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	NotifVectorJP.push_back(std::wstring(L"何か楽しいもの？"));
 	NotifVectorJP.push_back(std::wstring(L"楽しい？"));
 	NotifVectorJP.push_back(std::wstring(L"..."));
+
+	NotifSoundVec.push_back(IDR_NOTIF1);
+	NotifSoundVec.push_back(IDR_NOTIF2);
+	NotifSoundVec.push_back(IDR_NOTIF3);
+	NotifSoundVec.push_back(IDR_NOTIF4);
+	NotifSoundVec.push_back(IDR_NOTIF5);
 	
 	//Mario Init
 	TrayIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_TRAYDEFAULT));

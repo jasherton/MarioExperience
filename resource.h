@@ -14,6 +14,11 @@
 #define IDI_THINK                       115
 #define IDB_PISS                        117
 #define IDB_FACTS                       118
+#define IDR_NOTIF1                      119
+#define IDR_NOTIF2                      120
+#define IDR_NOTIF3                      121
+#define IDR_NOTIF4                      122
+#define IDR_NOTIF5                      123
 #define IDC_BUTTON1                     1001
 #define ID_ABOUT                        40001
 #define ID_EXIT                         40002
@@ -28,7 +33,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        119
+#define _APS_NEXT_RESOURCE_VALUE        124
 #define _APS_NEXT_COMMAND_VALUE         40014
 #define _APS_NEXT_CONTROL_VALUE         1002
 #define _APS_NEXT_SYMED_VALUE           101
