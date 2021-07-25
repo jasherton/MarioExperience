@@ -1,11 +1,12 @@
-﻿#include "globals.h"
-#include "about.h"
-#include "events.h"
-#include <iostream>
+﻿#include <iostream>
 #include <fstream>
 #include <vector>
 #include <random>
 #include <filesystem>
+#include "globals.h"
+#include "about.h"
+#include "events.h"
+#include "unzip.h"
 
 #include <WinSDKVer.h>
 #define _WIN32_WINNT 0x0601
@@ -31,8 +32,9 @@ static std::wstring ToolTip = L"Mario";
 HMENU TrayMenu;
 
 HANDLE AppMutex;
-static unsigned int AppID = 3; //Version Number
+static std::string AppID = "v4.0";
 static std::string BaseURL = "http://marioexperience.us.to/";
+static std::string GitLatestURL = "https://api.github.com/repos/jasherton/MarioExperience/releases/latest";
 
 static HICON NotifIcon1 = ::LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_NOTIF1));
 static HICON NotifAnnoy1 = ::LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ANNOY1));
@@ -57,47 +59,82 @@ void SaveData() {
 	setOut.close();
 }
 
+std::vector<char> UpdateInfo;
 std::vector<char> UpdateData;
 bool UpdateValid;
-char* UpdateDataPtr;
-size_t UpdateDataSize;
 
 void GetUpdateInfo() {
-	UpdateData = CURL_Get(BaseURL + "update.ashx");
 	UpdateValid = false;
-	UpdateDataPtr = UpdateData.data();
-	UpdateDataSize = UpdateData.size();
-	if (UpdateDataSize != 0) {
-		int IDNum = *(int*)UpdateDataPtr;
-		if (IDNum > AppID) {
-			UpdateValid = true;
-			UpdateDataPtr += 4;
-			UpdateDataSize -= 4;
+	curl_slist* headers = NULL;
+	headers = curl_slist_append(headers, "User-Agent: MarioExperience");
+	UpdateInfo = HttpGet(GitLatestURL, headers);
+	if (UpdateInfo.size() > 0) {
+		std::string updtxt(UpdateInfo.data());
+		size_t idx = updtxt.find("\"tag_name\"");
+		if (idx != std::string::npos) {
+			size_t idx2 = updtxt.find("\"", idx + 10);
+			if (idx2 != std::string::npos) {
+				size_t idx3 = updtxt.find("\"", idx2 + 1);
+				if (idx3 != std::string::npos) {
+					std::string tagName = updtxt.substr(idx2+1, idx3 - idx2 - 1);
+					if (tagName != AppID) {
+						size_t downIdx = updtxt.find("\"browser_download_url\"");
+						if (downIdx != std::string::npos) {
+							size_t downIdx2 = updtxt.find("\"", downIdx + 22);
+							if (downIdx2 != std::string::npos) {
+								size_t downIdx3 = updtxt.find("\"", downIdx2 + 1);
+								if (downIdx3 != std::string::npos) {
+									std::string downURL = updtxt.substr(downIdx2+1, downIdx3 - downIdx2 - 1);
+									UpdateData = HttpGet(downURL, headers);
+									if (UpdateData.size() > 0) {
+										UpdateValid = true;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }
 
 void DoUpdate() {
 	if (UpdateValid) {
-		TCHAR szExeFileName[MAX_PATH];
-		GetModuleFileName(NULL, szExeFileName, MAX_PATH);
-		std::filesystem::path filePath(szExeFileName);
-		std::filesystem::path parent = filePath.parent_path();
-		std::filesystem::rename(filePath, parent.string() + "\\temp.exe");
-		std::ofstream setOut;
-		setOut.exceptions(0);
-		setOut.open(filePath.string(), std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
-		setOut.write(UpdateDataPtr, UpdateDataSize);
-		setOut.close();
+		std::ofstream zipOut;
+		zipOut.exceptions(0);
+		zipOut.open("latest.zip", std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+		zipOut.write(UpdateData.data(), UpdateData.size());
+		zipOut.close();
 
 		if (TrayStruct.cbSize > 0) {
 			Shell_NotifyIcon(NIM_DELETE, &TrayStruct);
 			SaveData();
 		}
 
+		TCHAR szExeFileName[MAX_PATH];
+		GetModuleFileName(NULL, szExeFileName, MAX_PATH);
+		std::filesystem::path filePath(szExeFileName);
+		std::filesystem::path parent = filePath.parent_path();
+		std::filesystem::rename(filePath, parent.string() + "\\temp.exe");
+
+		HZIP hz = OpenZip(L"latest.zip", 0);
+		SetUnzipBaseDir(hz, parent.wstring().data());
+		ZIPENTRY ze;
+		GetZipItem(hz, -1, &ze);
+		for (int i = 0; i < ze.index; i++)
+		{
+			GetZipItem(hz, i, &ze);
+			UnzipItem(hz, i, ze.name);
+		}
+		CloseZip(hz);
+		
+		std::filesystem::remove("latest.zip");
+		std::filesystem::rename(parent.string() + "\\MarioPissing.exe", filePath);
+
 		ReleaseMutex(AppMutex);
 		CloseHandle(AppMutex);
-		
+
 		STARTUPINFO si;
 		PROCESS_INFORMATION pi;
 		ZeroMemory(&si, sizeof(si));
@@ -392,18 +429,12 @@ int _stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		if (std::filesystem::exists("temp.exe")) {
 			std::filesystem::remove("temp.exe");
 		}
-		//download new content here
 	}
 	else {
 		#if !_DEBUG
 		GetUpdateInfo();
 		DoUpdate();
 		#endif
-	}
-	
-	//Check if content folder is missing and download it
-	if (!std::filesystem::is_directory("content")) {
-		//download and unzip here
 	}
 	
 	InitAbout();

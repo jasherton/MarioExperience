@@ -34,4 +34,5 @@ Iter select_randomly(Iter start, Iter end) {
 }
 
 extern size_t writeString(char* contents, size_t size, size_t nmemb, void* userp);
-extern std::vector<char> CURL_Get(std::string url);
+extern std::vector<char> HttpGet(std::string url);
+extern std::vector<char> HttpGet(std::string url, curl_slist* chunk);
