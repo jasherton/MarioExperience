@@ -70,6 +70,10 @@ void AboutWndFn() {
 		SetTextColor(hdc, (COLORREF)0x00FF8053);
 		DrawTextW(hdc, L"Made by crazy1755", -1, &TextRect, DT_CENTER);
 	}
+
+	TextRect.top = 430;
+	SetTextColor(hdc, (COLORREF)0x00000000);
+	DrawTextA(hdc, AppID.c_str(), -1, &TextRect, DT_CENTER);
 	
 	DeleteObject(BigFont);
 	DeleteObject(SmallFont);

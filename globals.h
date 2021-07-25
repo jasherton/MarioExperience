@@ -10,6 +10,7 @@
 #include <iterator>
 #include <curl/curl.h>
 
+static std::string AppID = "v5.1";
 extern HINSTANCE HINST;
 extern HWND MainWnd;
 extern bool JPMode;

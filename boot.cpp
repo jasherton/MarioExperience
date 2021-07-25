@@ -32,7 +32,6 @@ static std::wstring ToolTip = L"Mario";
 HMENU TrayMenu;
 
 HANDLE AppMutex;
-static std::string AppID = "v5.0";
 static std::string BaseURL = "http://marioexperience.us.to/";
 static std::string GitLatestURL = "https://api.github.com/repos/jasherton/MarioExperience/releases/latest";
 
